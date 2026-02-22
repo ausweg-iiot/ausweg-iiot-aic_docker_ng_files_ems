@@ -1,24 +1,22 @@
-# Stage 1: Build the Angular app
-FROM node:20-alpine AS build
-WORKDIR /app
-
-# Copy package files and install dependencies
-COPY package*.json ./
-RUN npm install
-
-# Copy the rest of the code and build for production
-COPY . .
-RUN npm run build -- --configuration production
-
-# Stage 2: Serve the app with Nginx
+# Use the stable, lightweight Nginx Alpine image
 FROM nginx:stable-alpine
 
-# Copy the build output from the build stage
-# Note: Check your angular.json "outputPath". It might be 'dist/ems-base-product-web-ui/browser'
-COPY --from=build /app/dist/ems-base-product-web-ui /usr/share/nginx/html
+# Set the working directory to Nginx's html folder
+WORKDIR /usr/share/nginx/html
 
-# Copy our custom nginx configuration
+# Remove the default Nginx welcome page
+RUN rm -rf ./*
+
+# Copy the compiled Angular files from the Jenkins 'dist' folder
+# NOTE: If 'ng build' creates a subfolder (e.g., dist/my-app/*), 
+# change the source below to 'dist/my-app/'.
+COPY dist/ .
+
+# Copy your custom Nginx configuration from the project folder
 COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
+# Expose port 80 for traffic
 EXPOSE 80
+
+# Start Nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"]
