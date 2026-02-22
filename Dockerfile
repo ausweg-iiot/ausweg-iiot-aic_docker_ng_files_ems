@@ -1,22 +1,19 @@
-# Use the stable, lightweight Nginx Alpine image
-FROM nginx:stable-alpine
+# Use official Nginx image
+FROM nginx:alpine
 
-# Set the working directory to Nginx's html folder
-WORKDIR /usr/share/nginx/html
+# Clean default nginx contents
+RUN rm -rf /usr/share/nginx/html/*
 
-# Remove the default Nginx welcome page
-RUN rm -rf ./*
+# Copy build outputs 
+# This assumes your Jenkins script outputs to a folder named 'dist'
+COPY ./dist/ /usr/share/nginx/html/
 
-# Copy the compiled Angular files from the Jenkins 'dist' folder
-# NOTE: If 'ng build' creates a subfolder (e.g., dist/my-app/*), 
-# change the source below to 'dist/my-app/'.
-COPY dist/ .
+# Copy custom Nginx config
+# Note: Ensure the file in your repo is named 'default.conf' inside the 'nginx' folder
+COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Copy your custom Nginx configuration from the project folder
-COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80 for traffic
+# Expose port 80
 EXPOSE 80
 
-# Start Nginx in the foreground
+# Run Nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"]
